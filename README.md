@@ -47,6 +47,16 @@ Example response:
   "recommendation": "Suggest a short grounding exercise."
 }
 
+## Service Structure
+
+- `src/app.py` — application entrypoint
+- `src/routes/health.py` — health endpoint
+- `src/routes/infer.py` — internal inference endpoint
+- `src/services/inference_engine.py` — inference logic layer
+- `src/models/schemas.py` — request/response schemas
+- `src/config/settings.py` — runtime configuration
+- `tests/` — AI inference service test coverage
+
 ## Contains
 - AI service code
 - Dockerfile
