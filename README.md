@@ -15,6 +15,36 @@ It is not responsible for:
 - handling client-facing authentication or orchestration
 - owning public API response composition
 
+## API Contract
+
+### Endpoints
+
+#### GET /health
+Returns service health status.
+
+Example response:
+{
+  "status": "ok",
+  "service": "ai-inference-service"
+}
+
+#### POST /v1/infer
+Accepts structured inference input from the API service and returns AI-generated output.
+
+Example request:
+{
+  "request_id": "abc-123",
+  "input_type": "text",
+  "content": "I have been feeling overwhelmed this week."
+}
+
+Example response:
+{
+  "summary": "User reports stress and overwhelm.",
+  "signals": ["stress", "fatigue"],
+  "recommendation": "Suggest a short grounding exercise."
+}
+
 ## Contains
 - AI service code
 - Dockerfile
