@@ -17,6 +17,8 @@ It is not responsible for:
 
 ## API Contract
 
+This defines the internal service-to-service API used by the API service.
+
 ### Endpoints
 
 #### GET /health
