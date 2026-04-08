@@ -1,0 +1,58 @@
+name: AI Service Promotion
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_environment:
+        description: "Environment to promote to"
+        required: true
+        type: choice
+        options:
+          - staging
+          - prod
+      image_tag:
+        description: "Full image SHA tag to promote"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout GitOps repo
+        uses: actions/checkout@v4
+        with:
+          repository: andrewlinzie/gitops-infra
+          token: ${{ secrets.GH_PAT }}
+          path: gitops-infra
+
+      - name: Install yq
+        run: |
+          sudo wget -O /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+          /usr/local/bin/yq --version
+
+      - name: Update promoted environment image tag
+        env:
+          TARGET_ENV: ${{ inputs.target_environment }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          cd gitops-infra
+          /usr/local/bin/yq -i '.image.tag = strenv(IMAGE_TAG)' "${TARGET_ENV}/ai-inference-service/values.yaml"
+          cat "${TARGET_ENV}/ai-inference-service/values.yaml"
+
+      - name: Commit and push promotion
+        env:
+          TARGET_ENV: ${{ inputs.target_environment }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          cd gitops-infra
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add "${TARGET_ENV}/ai-inference-service/values.yaml"
+          git commit -m "chore(ai-inference-service): promote ${TARGET_ENV} to ${IMAGE_TAG}" || echo "No changes to commit"
+          git push
