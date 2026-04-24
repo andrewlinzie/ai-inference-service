@@ -19,6 +19,8 @@ It is not responsible for:
 - formatting client-facing responses
 - managing deployment state or infrastructure
 
+---
+
 ## API Contract
 
 ### Endpoints
@@ -60,6 +62,8 @@ Example response:
 }
 ```
 
+---
+
 ## Service Structure
 
 * `src/app.py` — application entrypoint
@@ -69,6 +73,8 @@ Example response:
 * `src/models/schemas.py` — request/response schemas
 * `src/config/settings.py` — runtime configuration
 * `tests/` — test suite
+
+---
 
 ## CI/CD Pipeline
 
@@ -101,6 +107,8 @@ This service uses GitHub Actions with environment-aware behavior:
 build once -> promote the same artifact across environments
 ```
 
+---
+
 ## Containerization
 
 * Dockerized FastAPI service
@@ -111,6 +119,8 @@ build once -> promote the same artifact across environments
 ```
 <account>.dkr.ecr.<region>.amazonaws.com/ai-inference-service
 ```
+
+---
 
 ## Deployment Model
 
@@ -125,6 +135,8 @@ Instead:
 
 This follows a pull-based GitOps model where Git defines the desired state and ArgoCD enforces it.
 
+---
+
 ## Runtime Behavior
 
 This service is deployed with Horizontal Pod Autoscaling (HPA):
@@ -133,12 +145,16 @@ This service is deployed with Horizontal Pod Autoscaling (HPA):
 - Minimum and maximum replica thresholds are defined in GitOps configuration
 - The service scales dynamically based on runtime demand
 
+---
+
 ## Contains
 
 * AI inference service code
 * Dockerfile
 * GitHub Actions CI pipeline
 * Tests
+
+---
 
 ## Does Not Contain
 
@@ -147,6 +163,8 @@ This service is deployed with Horizontal Pod Autoscaling (HPA):
 * API orchestration logic
 * Environment-specific configuration
 * Direct deployment logic
+
+---
 
 ## Key Architectural Decisions
 
@@ -157,6 +175,8 @@ This service is deployed with Horizontal Pod Autoscaling (HPA):
 * Promotion across environments without rebuilding artifacts
 * Internal-only service design (not publicly exposed)
 
+---
+
 ## Future Enhancements
 
 - Integration with real AI/ML models
@@ -165,6 +185,8 @@ This service is deployed with Horizontal Pod Autoscaling (HPA):
 - Model versioning and routing strategies
 - Observability (logging, metrics, tracing)
 - Performance tuning and scaling optimization
+
+---
 
 ## Architecture Context
 
