@@ -2,9 +2,26 @@ name: AI Service CI
 
 on:
   pull_request:
+    branches:
+      - main
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "Dockerfile"
+      - "requirements.txt"
+      - "pytest.ini"
+      - ".github/workflows/ci.yml"
+
   push:
     branches:
       - main
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "Dockerfile"
+      - "requirements.txt"
+      - "pytest.ini"
+      - ".github/workflows/ci.yml"
 
 permissions:
   id-token: write
