@@ -7,8 +7,6 @@ from src.models.schemas import InferenceRequest, InferenceResponse
 def run_inference(payload: InferenceRequest) -> InferenceResponse:
     start_time = time.time()
     try:
-        raise Exception("test failure")
-
         return InferenceResponse(
             summary="User reports stress and overwhelm.",
             signals=["stress", "fatigue"],
