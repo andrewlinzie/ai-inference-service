@@ -51,7 +51,7 @@ async def metrics_endpoint():
 
 
 async def inference_metrics_middleware(request, call_next):
-    if request.url.path != "/v1/infer":
+    if not request.url.path.startswith("/v1/infer"):
         return await call_next(request)
 
     start_time = time.time()
