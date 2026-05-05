@@ -183,8 +183,28 @@ This service is deployed with Horizontal Pod Autoscaling (HPA):
 - Compute-aware workloads (CPU/GPU optimization)
 - Async processing for long-running inference tasks
 - Model versioning and routing strategies
-- Observability (logging, metrics, tracing)
 - Performance tuning and scaling optimization
+
+---
+
+## Observability
+
+This service exposes Prometheus-compatible metrics via a `/metrics` endpoint.
+
+Metrics include:
+
+- `inference_requests_total`
+- `inference_duration_seconds`
+- `inference_errors_total`
+- `model_processing_time_seconds`
+- `inference_memory_usage_bytes`
+
+These metrics are scraped by Prometheus and visualized in Grafana dashboards to monitor inference performance, latency, and resource usage.
+
+This allows the service to be:
+- observable under load
+- debuggable during failures
+- measurable against defined SLOs
 
 ---
 
