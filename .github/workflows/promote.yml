@@ -30,19 +30,56 @@ jobs:
           token: ${{ secrets.GH_PAT }}
           path: gitops-infra
 
+      - name: Checkout the inference commit this image was built from
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.image_tag }}
+          path: inference
+
       - name: Install yq
         run: |
           sudo wget -O /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
           sudo chmod +x /usr/local/bin/yq
           /usr/local/bin/yq --version
 
+      - name: Read the pin from that commit
+        id: pin
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          pin_path = Path("inference/model_pin.json")
+          if not pin_path.is_file():
+              raise SystemExit(f"no model_pin.json at {os.environ['IMAGE_TAG']}")
+          pin = json.loads(pin_path.read_text())
+          required = ("model_version", "registry_version", "run_id")
+          missing = [key for key in required if not pin.get(key)]
+          if missing:
+              raise SystemExit(f"model_pin.json missing {missing}")
+          out = Path(os.environ["GITHUB_OUTPUT"])
+          with out.open("a") as fh:
+              fh.write(f"model_version={pin['model_version']}\n")
+              fh.write(f"registry_version={pin['registry_version']}\n")
+              fh.write(f"run_id={pin['run_id']}\n")
+          print(pin["model_version"])
+          PY
+
       - name: Update promoted environment image tag
         env:
           TARGET_ENV: ${{ inputs.target_environment }}
           IMAGE_TAG: ${{ inputs.image_tag }}
+          MODEL_VERSION: ${{ steps.pin.outputs.model_version }}
+          REGISTRY_VERSION: ${{ steps.pin.outputs.registry_version }}
+          RUN_ID: ${{ steps.pin.outputs.run_id }}
         run: |
           cd gitops-infra
           /usr/local/bin/yq -i '.image.tag = strenv(IMAGE_TAG)' "${TARGET_ENV}/ai-inference-service/values.yaml"
+          /usr/local/bin/yq -i '.model.version = strenv(MODEL_VERSION)' "${TARGET_ENV}/ai-inference-service/values.yaml"
+          /usr/local/bin/yq -i '.model.registryVersion = strenv(REGISTRY_VERSION)' "${TARGET_ENV}/ai-inference-service/values.yaml"
+          /usr/local/bin/yq -i '.model.runId = strenv(RUN_ID)' "${TARGET_ENV}/ai-inference-service/values.yaml"
+          /usr/local/bin/yq -i '.livenessProbe.path = "/live"' "${TARGET_ENV}/ai-inference-service/values.yaml"
           cat "${TARGET_ENV}/ai-inference-service/values.yaml"
 
       - name: Commit and push promotion

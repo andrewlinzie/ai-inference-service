@@ -1,0 +1,8 @@
+{
+  "registered_name": "transaction_fraud",
+  "registry_version": "1",
+  "run_id": "5cfb5967397d4a5daf3fdccb4b1245aa",
+  "artifact_path": "fraud_classifier",
+  "model_version": "fraud-logreg-s42-5f3c0fdb-auc0p848060",
+  "s3_uri": "s3://ai-cloud-platform-899631475351-dvc/mlflow/1/5cfb5967397d4a5daf3fdccb4b1245aa/artifacts/fraud_classifier/"
+}

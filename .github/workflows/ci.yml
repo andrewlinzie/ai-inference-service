@@ -10,6 +10,7 @@ on:
       - "Dockerfile"
       - "requirements.txt"
       - "pytest.ini"
+      - "model_pin.json"
       - ".github/workflows/ci.yml"
 
   push:
@@ -21,6 +22,7 @@ on:
       - "Dockerfile"
       - "requirements.txt"
       - "pytest.ini"
+      - "model_pin.json"
       - ".github/workflows/ci.yml"
 
 permissions:
@@ -59,6 +61,9 @@ jobs:
     outputs:
       image_tag: ${{ steps.image-meta.outputs.image_tag }}
       image_uri: ${{ steps.image-meta.outputs.image_uri }}
+      model_version: ${{ steps.bake-model.outputs.model_version }}
+      registry_version: ${{ steps.bake-model.outputs.registry_version }}
+      run_id: ${{ steps.bake-model.outputs.run_id }}
 
     steps:
       - name: Checkout repository
@@ -81,6 +86,40 @@ jobs:
 
           echo "image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
           echo "image_uri=${IMAGE_URI}" >> $GITHUB_OUTPUT
+
+      - name: Copy pinned model into the build context
+        id: bake-model
+        run: |
+          PIN=model_pin.json
+          S3_URI=$(python3 -c "import json; print(json.load(open('$PIN'))['s3_uri'])")
+          rm -rf baked_model && mkdir -p baked_model/fraud_classifier
+          aws s3 cp --recursive "$S3_URI" baked_model/fraud_classifier/
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          pin = json.loads(Path("model_pin.json").read_text())
+          meta = json.loads(Path("baked_model/fraud_classifier/metadata.json").read_text())
+          if meta["model_version"] != pin["model_version"]:
+              raise SystemExit(
+                  f"metadata model_version {meta['model_version']} != pin {pin['model_version']}"
+              )
+          required = {
+              "model.joblib",
+              "metadata.json",
+              "feature_schema.json",
+              "metrics.json",
+              "config_snapshot.yaml",
+          }
+          missing = required - {p.name for p in Path("baked_model/fraud_classifier").iterdir()}
+          if missing:
+              raise SystemExit(f"package incomplete: {sorted(missing)}")
+          out = Path(os.environ["GITHUB_OUTPUT"])
+          with out.open("a") as fh:
+              fh.write(f"model_version={pin['model_version']}\n")
+              fh.write(f"registry_version={pin['registry_version']}\n")
+              fh.write(f"run_id={pin['run_id']}\n")
+          print(pin["model_version"])
+          PY
 
       - name: Build Docker image
         run: docker build -t "${{ steps.image-meta.outputs.image_uri }}" .
@@ -110,9 +149,16 @@ jobs:
       - name: Update dev ai-inference-service image tag
         env:
           IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
+          MODEL_VERSION: ${{ needs.build-and-push.outputs.model_version }}
+          REGISTRY_VERSION: ${{ needs.build-and-push.outputs.registry_version }}
+          RUN_ID: ${{ needs.build-and-push.outputs.run_id }}
         run: |
           cd gitops-infra
           /usr/local/bin/yq -i '.image.tag = strenv(IMAGE_TAG)' dev/ai-inference-service/values.yaml
+          /usr/local/bin/yq -i '.model.version = strenv(MODEL_VERSION)' dev/ai-inference-service/values.yaml
+          /usr/local/bin/yq -i '.model.registryVersion = strenv(REGISTRY_VERSION)' dev/ai-inference-service/values.yaml
+          /usr/local/bin/yq -i '.model.runId = strenv(RUN_ID)' dev/ai-inference-service/values.yaml
+          /usr/local/bin/yq -i '.livenessProbe.path = "/live"' dev/ai-inference-service/values.yaml
           cat dev/ai-inference-service/values.yaml
 
       - name: Commit and push changes

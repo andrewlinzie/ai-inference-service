@@ -15,3 +15,6 @@
 .venv/
 __pycache__/
 *.pyc
+
+# Downloaded champion bytes. CI copies these at image build. Do not commit them.
+baked_model/

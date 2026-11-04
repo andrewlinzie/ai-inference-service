@@ -1,10 +1,32 @@
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 
+from src.config.settings import model_dir
 from src.metrics import inference_metrics_middleware, metrics_endpoint
 from src.routes.health import router as health_router
 from src.routes.infer import router as infer_router
+from src.services.model_loader import load_package
 
-app = FastAPI(title="AI Inference Service")
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    try:
+        loaded_from = model_dir()
+        app.state.package = load_package(loaded_from)
+    except FileNotFoundError:
+        logger.error("Model package not found at %s", model_dir())
+        app.state.package = None
+    except Exception:
+        logger.exception("Failed to load model from %s", model_dir())
+        app.state.package = None
+    yield
+
+
+app = FastAPI(title="AI Inference Service", lifespan=lifespan)
 
 app.include_router(health_router)
 app.include_router(infer_router)
