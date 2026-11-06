@@ -38,6 +38,7 @@ def load_package(package_dir: str | Path) -> dict[str, Any]:
     model = joblib.load(root / "model.joblib")
     metadata = json.loads((root / "metadata.json").read_text(encoding="utf-8"))
     feature_schema = json.loads((root / "feature_schema.json").read_text(encoding="utf-8"))
+    metrics = json.loads((root / "metrics.json").read_text(encoding="utf-8"))
     feature_names = _feature_names(feature_schema)
 
     if feature_names != list(metadata.get("feature_names", [])):
@@ -55,7 +56,19 @@ def load_package(package_dir: str | Path) -> dict[str, Any]:
         "metadata": metadata,
         "feature_schema": feature_schema,
         "feature_names": feature_names,
+        "metrics": metrics,
     }
+
+
+def package_roc_auc(package: dict[str, Any]) -> float | None:
+    """Validation roc_auc from the package report. Missing means no gauge."""
+    report = package.get("metrics")
+    if not isinstance(report, dict):
+        return None
+    metrics = report.get("metrics")
+    if not isinstance(metrics, dict) or "roc_auc" not in metrics:
+        return None
+    return float(metrics["roc_auc"])
 
 
 def score(package: dict[str, Any], features: dict[str, Any]) -> dict[str, Any]:

@@ -41,6 +41,31 @@ INFERENCE_MEMORY_USAGE_BYTES = Gauge(
     ["service"],
 )
 
+INFERENCE_SCORE = Histogram(
+    "inference_score",
+    "Predicted probability_fraud",
+    ["service", "model_version"],
+    buckets=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0),
+)
+
+INFERENCE_PREDICTIONS_TOTAL = Counter(
+    "inference_predictions_total",
+    "Scored predictions by the model's class",
+    ["service", "model_version", "is_fraud"],
+)
+
+MODEL_TRAINING_ROC_AUC = Gauge(
+    "model_training_roc_auc",
+    "Validation roc_auc stored in the baked package metrics.json",
+    ["service", "model_version"],
+)
+
+PREDICTION_LOG_FAILURES_TOTAL = Counter(
+    "prediction_log_failures_total",
+    "Prediction samples that failed to write to S3",
+    ["service"],
+)
+
 
 async def metrics_endpoint():
     process = psutil.Process(os.getpid())

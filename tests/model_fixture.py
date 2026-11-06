@@ -51,6 +51,17 @@ def write_package(directory: Path, model_version: str = "test-logreg") -> Path:
         + "\n",
         encoding="utf-8",
     )
-    (directory / "metrics.json").write_text("{}\n", encoding="utf-8")
+    (directory / "metrics.json").write_text(
+        json.dumps(
+            {
+                "metrics": {"roc_auc": 0.5},
+                "primary_metric": "roc_auc",
+                "primary_direction": "maximize",
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     (directory / "config_snapshot.yaml").write_text("task: test\n", encoding="utf-8")
     return directory
